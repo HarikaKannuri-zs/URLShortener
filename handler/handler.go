@@ -56,7 +56,11 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid short URL format", http.StatusBadRequest)
 		return
 	}
-	orgUrl := h.srvc.RedirectUrl(alias)
+	orgUrl, err := h.srvc.RedirectUrl(alias)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	if orgUrl == "" {
 		fmt.Println("No original URL found...")
 		http.Error(w, "Invalid Request", http.StatusNotFound)

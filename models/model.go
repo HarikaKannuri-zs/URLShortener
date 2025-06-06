@@ -1,13 +1,23 @@
 package models
 
+import "time"
+
 type URLData struct {
-	Id       int    `json:"id"`
-	Original string `json:"org_url"`
-	Shortend string `json:"alias"`
+	Id            int       `json:"id"`
+	Original      string    `json:"org_url"`
+	Alias         string    `json:"alias"`
+	CretedAt      time.Time `json:"-"`
+	ExpiryAt      time.Time `json:"expiry_at"`
+	ClickCnt      int       `json:"-"`
+	MaxClickLimit int       `json:"max_click_limit"`
 }
 
-// CREATE TABLE urldata (
-//     id SERIAL PRIMARY KEY,
-//     original TEXT NOT NULL,
-//     shortend TEXT UNIQUE NOT NULL
+// CREATE TABLE urlData(
+// 	id SERIAL  PRIMARY KEY,
+// 	original TEXT NOT NULL,
+// 	alias TEXT UNIQUE NOT NULL,
+// 	created_at TIMESTAMP DEFAULT NOW(),
+// 	expiry_at TIMESTAMP,
+// 	click_cnt INT DEFAULT 0,
+// 	max_click_limit INT
 // );
