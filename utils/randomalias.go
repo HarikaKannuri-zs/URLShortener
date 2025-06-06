@@ -9,7 +9,7 @@ const CharSet = "abcdefghijklmnopqrstuvwxyz"
 const Aliaslength = 6
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource((time.Now().UnixNano())))
 }
 
 func GenerateRandomAlias() string {
