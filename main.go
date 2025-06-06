@@ -33,5 +33,9 @@ func main() {
 	router.HandleFunc("/shorten", h.ShortenUrl).Methods("POST")
 	router.HandleFunc("/redirect", h.Redirect).Methods("GET")
 
-	http.ListenAndServe(":8000", router)
+	err = http.ListenAndServe(":8000", router)
+	if err != nil {
+		fmt.Println("Server Connection failed")
+		return
+	}
 }

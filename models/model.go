@@ -6,7 +6,8 @@ type URLData struct {
 	Shortend string `json:"short_url"`
 }
 
-// type URLShortenReq struct {
-// 	Original string `json:"org_url"`
-// 	Alias    string `json:"alias"`
-// }
+// CREATE TABLE urldata (
+//     id SERIAL PRIMARY KEY,
+//     original TEXT NOT NULL,
+//     shortend TEXT UNIQUE NOT NULL
+// );
