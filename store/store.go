@@ -3,25 +3,27 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"time"
+	"url-shortener/cache"
 	"url-shortener/models"
-
 	_ "github.com/lib/pq"
 )
 
 type Store struct {
-	db *sql.DB
+	db    *sql.DB
+	Cache *cache.RedisCache
 }
 
 const DefaultDomain = "https://mygourl/"
 
-func NewStore(urlDb *sql.DB) *Store {
+func NewStore(urlDb *sql.DB, redisCache *cache.RedisCache) *Store {
 	return &Store{
-		db: urlDb,
+		db:    urlDb,
+		Cache: redisCache,
 	}
 }
 
 func (s *Store) ShortenUrl(urlData *models.URLData) (string, error) {
+	fmt.Println("Saving alias:", urlData.Alias)
 	query := `INSERT into urldata(original,alias,expiry_at,max_click_limit) VALUES($1,$2,$3,$4)`
 	_, err := s.db.Exec(query, urlData.Original, urlData.Alias, urlData.ExpiryAt, urlData.MaxClickLimit)
 	if err != nil {
@@ -31,25 +33,16 @@ func (s *Store) ShortenUrl(urlData *models.URLData) (string, error) {
 	return DefaultDomain + urlData.Alias, nil
 }
 
-func (s *Store) RedirectUrl(aliasUurl string) (string, error) {
+func (s *Store) RedirectUrl(aliasUrl string) (*models.URLData, error) {
+
 	var urlData models.URLData
 	query := `SELECT original,expiry_at,click_cnt,max_click_limit from urlData where Alias = $1`
-	err := s.db.QueryRow(query, aliasUurl).Scan(&urlData.Original, &urlData.ExpiryAt, &urlData.ClickCnt, &urlData.MaxClickLimit)
+	err := s.db.QueryRow(query, aliasUrl).Scan(&urlData.Original, &urlData.ExpiryAt, &urlData.ClickCnt, &urlData.MaxClickLimit)
 	if err != nil {
-		return "", err
-	}
-	if !urlData.ExpiryAt.IsZero() && time.Now().After(urlData.ExpiryAt) {
-		return "", fmt.Errorf("URL Expired")
-	}
-	if urlData.MaxClickLimit > 0 && urlData.ClickCnt >= urlData.MaxClickLimit {
-		return "", fmt.Errorf("click Limit Reached. Wait for few minutes")
-	}
-	_, err = s.db.Exec(`UPDATE urlData SET click_cnt = click_cnt+1 where alias = $1`, aliasUurl)
-	if err != nil {
-		return "", fmt.Errorf("failed to Update Click Count %v", err)
+		return nil, err
 	}
 
-	return urlData.Original, nil
+	return &urlData, nil
 }
 
 func (s *Store) SearchAliasExsists(urlData *models.URLData) (bool, error) {
@@ -60,4 +53,9 @@ func (s *Store) SearchAliasExsists(urlData *models.URLData) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func (s *Store) IncrementClickCount(alias string) error {
+	_, err := s.db.Exec(`UPDATE urlData SET click_cnt = click_cnt+1 where alias = $1`, alias)
+	return err
 }

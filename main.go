@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"url-shortener/cache"
 	"url-shortener/handler"
 	"url-shortener/service"
 	"url-shortener/store"
@@ -26,12 +27,17 @@ func main() {
 		fmt.Println("Database Connection failed at db.Ping:", err)
 		return
 	}
-	str := store.NewStore(db)
+	redisCache := cache.NewRedisCache()
+	str := store.NewStore(db, redisCache)
 	srv := service.NewService(str)
 	h := handler.NewHandler(srv)
 
 	router.HandleFunc("/shorten", h.ShortenUrl).Methods("POST")
 	router.HandleFunc("/redirect", h.Redirect).Methods("GET")
 
-	http.ListenAndServe(":8000", router)
+	err = http.ListenAndServe(":8000", router)
+	if err != nil {
+		fmt.Println("Server Connetion Failed..")
+	}
+
 }
